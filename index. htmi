@@ -1,1 +1,800 @@
 
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My AI - Your Personal AI Assistant</title>
+<style>
+  * { box-sizing: border-box; }
+  :root {
+    --bg: #0b1020;
+    --panel: #151d33;
+    --panel2: #141d32;
+    --border: #293451;
+    --border2: #455477;
+    --text: #e8ecff;
+    --muted: #9aa6c4;
+    --accent: #657cff;
+    --accent2: #8b9cff;
+    --user: #354a78;
+    --ai: #263450;
+    --danger: #ff5c7a;
+    --radius: 14px;
+  }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+  }
+
+  /* Header */
+  header {
+    padding: 14px 18px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand .logo { font-size: 26px; }
+  .brand .title { font-size: 20px; font-weight: 700; color: var(--accent2); }
+  .brand .tagline { font-size: 11px; color: var(--muted); }
+  .actions { display: flex; gap: 8px; }
+  .icon-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .icon-btn:hover { background: #223055; }
+
+  /* Main */
+  main {
+    flex: 1;
+    max-width: 820px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 8px;
+    background: var(--panel);
+    padding: 6px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+  }
+  .tab {
+    flex: 1;
+    padding: 10px;
+    background: transparent;
+    color: var(--muted);
+    border: 0;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .tab.active {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  /* Panels */
+  .panel { display: none; flex: 1; flex-direction: column; gap: 12px; }
+  .panel.active { display: flex; }
+
+  /* Chat */
+  .messages {
+    flex: 1;
+    background: var(--panel2);
+    border-radius: var(--radius);
+    padding: 14px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 300px;
+    max-height: calc(100dvh - 320px);
+    scroll-behavior: smooth;
+  }
+  .msg {
+    padding: 12px 14px;
+    border-radius: 14px;
+    line-height: 1.55;
+    max-width: 85%;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+    animation: fadeIn .2s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .msg.user { background: var(--user); align-self: flex-end; border-bottom-right-radius: 4px; }
+  .msg.ai { background: var(--ai); align-self: flex-start; border-bottom-left-radius: 4px; }
+  .msg.typing { color: var(--muted); font-style: italic; }
+  .msg.error { background: #3a1a26; color: #ffb3c1; align-self: flex-start; }
+
+  /* Composer */
+  .composer {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  #chatInput, #imagePrompt {
+    flex: 1;
+    min-width: 0;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    padding: 13px 14px;
+    font-size: 15px;
+  }
+  #chatInput:focus, #imagePrompt:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+  .mic-btn {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 46px; height: 46px;
+    border-radius: 12px;
+    font-size: 18px;
+    cursor: pointer;
+  }
+  .mic-btn.listening {
+    background: #3d2242;
+    border-color: var(--accent2);
+    animation: pulse 1.2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(139,156,255,.4); }
+    50% { box-shadow: 0 0 0 8px rgba(139,156,255,0); }
+  }
+  .send-btn {
+    background: var(--accent);
+    color: #fff;
+    border: 0;
+    padding: 13px 20px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .send-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* Image panel */
+  .image-form { display: flex; gap: 8px; }
+  .image-result {
+    flex: 1;
+    background: var(--panel2);
+    border-radius: var(--radius);
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    color: var(--muted);
+    text-align: center;
+  }
+  .image-result img {
+    max-width: 100%;
+    max-height: 500px;
+    border-radius: 12px;
+  }
+
+  /* Voice panel */
+  .voice-center {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--panel2);
+    border-radius: var(--radius);
+    padding: 30px;
+    gap: 20px;
+    min-height: 320px;
+  }
+  .big-mic {
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 0;
+    font-size: 48px;
+    cursor: pointer;
+    transition: transform .15s;
+  }
+  .big-mic:active { transform: scale(0.95); }
+  .big-mic.listening {
+    background: var(--danger);
+    animation: pulse 1.2s infinite;
+  }
+  #voiceStatus { color: var(--muted); font-size: 15px; text-align: center; }
+  #voiceReply { color: var(--text); font-size: 16px; text-align: center; max-width: 500px; line-height: 1.6; }
+
+  /* Modal */
+  .modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.7);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    padding: 20px;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal.open { display: flex; }
+  .modal-content {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal-content h2 { margin: 0 0 18px; }
+  .modal-content label {
+    display: block;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+  .modal-content input {
+    width: 100%;
+    margin-top: 6px;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    padding: 11px 12px;
+    font-size: 14px;
+  }
+  .modal-content small { display: block; margin-top: 4px; font-size: 11px; color: var(--muted); }
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 8px;
+  }
+  .btn-primary { background: var(--accent); color: #fff; border: 0; padding: 11px 20px; border-radius: 10px; font-weight: 600; cursor: pointer; }
+  .btn-secondary { background: transparent; color: var(--text); border: 1px solid var(--border); padding: 11px 20px; border-radius: 10px; cursor: pointer; }
+
+  /* Scrollbars */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #2c3a5a; border-radius: 4px; }
+
+  @media (max-width: 480px) {
+    .brand .title { font-size: 18px; }
+    .tab { font-size: 12px; padding: 9px 6px; }
+    .msg { max-width: 92%; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <span class="logo">✨</span>
+    <div>
+      <div class="title">MY AI</div>
+      <div class="tagline">Your Personal AI Assistant</div>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="icon-btn" id="clearBtn" title="चैट साफ़ करें">🗑️</button>
+    <button class="icon-btn" id="settingsBtn" title="सेटिंग">⚙️</button>
+  </div>
+</header>
+
+<main>
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" data-tab="chat">💬 चैट</button>
+    <button class="tab" data-tab="image">🎨 इमेज</button>
+    <button class="tab" data-tab="voice">🎙️ वॉइस</button>
+  </div>
+
+  <!-- Chat panel -->
+  <section class="panel active" id="panel-chat">
+    <div class="messages" id="messages" aria-live="polite"></div>
+    <div class="composer">
+      <button class="mic-btn" id="micBtn" title="बोलकर भेजें">🎙️</button>
+      <input id="chatInput" type="text" placeholder="अपना सवाल लिखें..." autocomplete="off" enterkeyhint="send">
+      <button class="send-btn" id="sendBtn">भेजें</button>
+    </div>
+  </section>
+
+  <!-- Image panel -->
+  <section class="panel" id="panel-image">
+    <div class="image-form">
+      <input id="imagePrompt" type="text" placeholder="क्या बनाना है? जैसे: 'एक सुंदर पहाड़ का दृश्य'">
+      <button class="send-btn" id="genBtn">बनाएं</button>
+    </div>
+    <div class="image-result" id="imageResult">
+      <div>यहाँ आपकी बनाई गई इमेज दिखेगी 🎨</div>
+    </div>
+  </section>
+
+  <!-- Voice panel -->
+  <section class="panel" id="panel-voice">
+    <div class="voice-center">
+      <button class="big-mic" id="bigMic">🎙️</button>
+      <p id="voiceStatus">बोलने के लिए माइक दबाएँ</p>
+      <div id="voiceReply"></div>
+    </div>
+  </section>
+</main>
+
+<!-- Settings modal -->
+<div class="modal" id="settingsModal">
+  <div class="modal-content">
+    <h2>⚙️ सेटिंग</h2>
+    <label>
+      API Key
+      <input type="password" id="apiKeyInput" placeholder="sk-...">
+      <small>यह आपके ब्राउज़र में सुरक्षित रहती है, किसी सर्वर पर नहीं जाती।</small>
+    </label>
+    <label>
+      API Base URL
+      <input type="text" id="apiBaseInput" placeholder="https://api.openai.com/v1">
+      <small>OpenAI, Groq, OpenRouter आदि के लिए अलग URL</small>
+    </label>
+    <label>
+      Chat Model
+      <input type="text" id="modelInput" placeholder="gpt-4o-mini">
+    </label>
+    <label>
+      Image Model
+      <input type="text" id="imageModelInput" placeholder="dall-e-3">
+    </label>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="closeSettings">बंद करें</button>
+      <button class="btn-primary" id="saveSettings">सेव करें</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* ============================================================
+   CONFIG & STATE
+============================================================ */
+const DEFAULTS = {
+  apiBase: 'https://api.openai.com/v1',
+  chatModel: 'gpt-4o-mini',
+  imageModel: 'dall-e-3',
+};
+const STORAGE = {
+  apiKey:    'myai.apikey',
+  apiBase:   'myai.apibase',
+  chatModel: 'myai.chatmodel',
+  imageModel:'myai.imagemodel',
+  history:   'myai.history',
+};
+const SYSTEM_PROMPT = 'You are My AI, a helpful, friendly personal assistant. ' +
+  'Reply in the same language the user writes in (Hindi or English). ' +
+  'Be concise but warm. Use emojis sparingly.';
+
+const state = {
+  messages: [],   // { role: 'user'|'assistant', content: string }
+  busy: false,
+  recog: null,
+  listening: false,
+  lastObjectUrl: null,
+};
+
+/* ============================================================
+   ELEMENTS
+============================================================ */
+const $ = id => document.getElementById(id);
+const messagesEl   = $('messages');
+const chatInput    = $('chatInput');
+const sendBtn      = $('sendBtn');
+const micBtn       = $('micBtn');
+const settingsBtn  = $('settingsBtn');
+const clearBtn     = $('clearBtn');
+const settingsModal= $('settingsModal');
+const apiKeyInput  = $('apiKeyInput');
+const apiBaseInput = $('apiBaseInput');
+const modelInput   = $('modelInput');
+const imageModelInput = $('imageModelInput');
+const imagePrompt  = $('imagePrompt');
+const genBtn       = $('genBtn');
+const imageResult  = $('imageResult');
+const bigMic       = $('bigMic');
+const voiceStatus  = $('voiceStatus');
+const voiceReply   = $('voiceReply');
+
+/* ============================================================
+   STORAGE HELPERS
+============================================================ */
+function getSetting(key, fallback = '') {
+  const v = localStorage.getItem(key);
+  return (v && v.trim()) ? v : fallback;
+}
+function setSetting(key, val) {
+  localStorage.setItem(key, val);
+}
+function hasApiKey() {
+  return !!getSetting(STORAGE.apiKey);
+}
+
+/* ============================================================
+   UI: TABS
+============================================================ */
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    $('panel-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+/* ============================================================
+   CHAT: RENDERING
+============================================================ */
+function renderMessage(role, content, extraClass = '') {
+  const div = document.createElement('div');
+  div.className = 'msg ' + (role === 'user' ? 'user' : 'ai') + (extraClass ? ' ' + extraClass : '');
+  div.textContent = content;
+  messagesEl.appendChild(div);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+  return div;
+}
+
+function saveHistory() {
+  localStorage.setItem(STORAGE.history, JSON.stringify(state.messages));
+}
+function loadHistory() {
+  try {
+    const raw = localStorage.getItem(STORAGE.history);
+    if (!raw) return;
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return;
+    state.messages = arr;
+    arr.forEach(m => {
+      renderMessage(m.role === 'user' ? 'user' : 'assistant', m.content);
+    });
+  } catch {}
+}
+
+function clearChat() {
+  if (!confirm('पूरी चैट साफ़ कर दें?')) return;
+  state.messages = [];
+  messagesEl.innerHTML = '';
+  saveHistory();
+  renderMessage('assistant', 'नमस्ते! 👋 मैं My AI हूँ। पूछिए कुछ भी।');
+}
+
+/* ============================================================
+   CHAT: AI CALL
+============================================================ */
+async function callChatAPI(history) {
+  const key  = getSetting(STORAGE.apiKey);
+  const base = getSetting(STORAGE.apiBase, DEFAULTS.apiBase).replace(/\/$/, '');
+  const model = getSetting(STORAGE.chatModel, DEFAULTS.chatModel);
+
+  if (!key) {
+    throw new Error('API key सेट नहीं है। ⚙️ सेटिंग खोलें।');
+  }
+
+  const body = {
+    model,
+    messages: [
+      { role: 'system', content: SYSTEM_PROMPT },
+      ...history.slice(-20), // last 20 messages context
+    ],
+    temperature: 0.7,
+  };
+
+  const res = await fetch(base + '/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + key,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    let msg = 'API error ' + res.status;
+    try {
+      const err = await res.json();
+      msg = err.error?.message || msg;
+    } catch {}
+    throw new Error(msg);
+  }
+
+  const data = await res.json();
+  const reply = data.choices?.[0]?.message?.content;
+  if (!reply) throw new Error('AI से खाली जवाब आया।');
+  return reply.trim();
+}
+
+async function sendMessage() {
+  const text = chatInput.value.trim();
+  if (!text || state.busy) return;
+
+  if (!hasApiKey()) {
+    openSettings();
+    return;
+  }
+
+  chatInput.value = '';
+  renderMessage('user', text);
+  state.messages.push({ role: 'user', content: text });
+  saveHistory();
+
+  state.busy = true;
+  sendBtn.disabled = true;
+  const typing = renderMessage('assistant', 'सोच रहा हूँ…', 'typing');
+
+  try {
+    const reply = await callChatAPI(state.messages);
+    typing.remove();
+    renderMessage('assistant', reply);
+    state.messages.push({ role: 'assistant', content: reply });
+    saveHistory();
+    speak(reply);
+  } catch (err) {
+    typing.remove();
+    renderMessage('assistant', '⚠️ ' + err.message, 'error');
+  } finally {
+    state.busy = false;
+    sendBtn.disabled = false;
+    chatInput.focus();
+  }
+}
+
+sendBtn.addEventListener('click', sendMessage);
+chatInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); sendMessage(); }
+});
+
+/* ============================================================
+   IMAGE GENERATION
+============================================================ */
+async function generateImage() {
+  const prompt = imagePrompt.value.trim();
+  if (!prompt) return;
+
+  if (!hasApiKey()) { openSettings(); return; }
+
+  genBtn.disabled = true;
+  genBtn.textContent = 'बना रहा…';
+  imageResult.innerHTML = '<div>🎨 इमेज बन रही है, थोड़ा इंतज़ार करें…</div>';
+
+  try {
+    const key  = getSetting(STORAGE.apiKey);
+    const base = getSetting(STORAGE.apiBase, DEFAULTS.apiBase).replace(/\/$/, '');
+    const model = getSetting(STORAGE.imageModel, DEFAULTS.imageModel);
+
+    const res = await fetch(base + '/images/generations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + key,
+      },
+      body: JSON.stringify({
+        model,
+        prompt,
+        n: 1,
+        size: '1024x1024',
+      }),
+    });
+
+    if (!res.ok) {
+      let msg = 'Image API error ' + res.status;
+      try { const e = await res.json(); msg = e.error?.message || msg; } catch {}
+      throw new Error(msg);
+    }
+    const data = await res.json();
+    const url = data.data?.[0]?.url || data.data?.[0]?.b64_json;
+    if (!url) throw new Error('इमेज URL नहीं मिला।');
+
+    imageResult.innerHTML = '';
+    const img = document.createElement('img');
+    img.src = url.startsWith('data:') ? url : url;
+    img.alt = prompt;
+    imageResult.appendChild(img);
+  } catch (err) {
+    imageResult.innerHTML = '<div style="color:#ffb3c1">⚠️ ' + err.message + '</div>';
+  } finally {
+    genBtn.disabled = false;
+    genBtn.textContent = 'बनाएं';
+  }
+}
+genBtn.addEventListener('click', generateImage);
+imagePrompt.addEventListener('keydown', e => {
+  if (e.key === 'Enter') generateImage();
+});
+
+/* ============================================================
+   VOICE INPUT (SpeechRecognition)
+============================================================ */
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+function initRecognition() {
+  if (!SpeechRecognition) return null;
+  const r = new SpeechRecognition();
+  r.lang = 'hi-IN';
+  r.interimResults = false;
+  r.maxAlternatives = 1;
+  return r;
+}
+
+function startListening(targetInput, statusEl, micEl) {
+  if (!SpeechRecognition) {
+    alert('आपके ब्राउज़र में Voice Input उपलब्ध नहीं है। Chrome आज़माएँ।');
+    return;
+  }
+  if (state.listening) { state.recog?.stop(); return; }
+
+  state.recog = initRecognition();
+  state.listening = true;
+  micEl.classList.add('listening');
+  if (statusEl) statusEl.textContent = 'सुन रहा हूँ… बोलिए';
+
+  state.recog.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    if (targetInput) targetInput.value = transcript;
+    if (statusEl) statusEl.textContent = 'पहचाना: ' + transcript;
+
+    // Auto-send in chat / voice panels
+    if (targetInput === chatInput) {
+      setTimeout(sendMessage, 150);
+    } else if (targetInput === null && statusEl === voiceStatus) {
+      // Voice panel — send via AI and speak reply
+      handleVoiceQuery(transcript);
+    }
+  };
+
+  state.recog.onerror = (e) => {
+    if (e.error === 'not-allowed') alert('माइक्रोफ़ोन की अनुमति दें।');
+    else if (e.error !== 'no-speech') alert('आवाज़ नहीं पहचान पाए।');
+  };
+
+  state.recog.onend = () => {
+    state.listening = false;
+    micEl.classList.remove('listening');
+    if (statusEl && statusEl.textContent === 'सुन रहा हूँ… बोलिए') {
+      statusEl.textContent = 'बोलने के लिए माइक दबाएँ';
+    }
+  };
+
+  state.recog.start();
+}
+
+async function handleVoiceQuery(text) {
+  if (!hasApiKey()) { openSettings(); return; }
+
+  state.messages.push({ role: 'user', content: text });
+  saveHistory();
+  voiceReply.textContent = 'सोच रहा हूँ…';
+
+  try {
+    const reply = await callChatAPI(state.messages);
+    state.messages.push({ role: 'assistant', content: reply });
+    saveHistory();
+    voiceReply.textContent = reply;
+    speak(reply);
+  } catch (err) {
+    voiceReply.textContent = '⚠️ ' + err.message;
+  }
+}
+
+micBtn.addEventListener('click', () => startListening(chatInput, null, micBtn));
+bigMic.addEventListener('click', () => startListening(null, voiceStatus, bigMic));
+
+/* ============================================================
+   VOICE OUTPUT (SpeechSynthesis)
+============================================================ */
+function speak(text) {
+  if (!('speechSynthesis' in window) || !text) return;
+
+  // Don't override voice if user is actively using chat
+  const utterance = new SpeechSynthesisUtterance(text.slice(0, 500));
+  utterance.lang = /[\u0900-\u097F]/.test(text) ? 'hi-IN' : 'en-US';
+  utterance.rate = 1;
+  utterance.pitch = 1;
+
+  // Pick a matching voice if available
+  const voices = speechSynthesis.getVoices();
+  const match = voices.find(v => v.lang === utterance.lang);
+  if (match) utterance.voice = match;
+
+  speechSynthesis.cancel();
+  speechSynthesis.speak(utterance);
+}
+
+/* Some browsers load voices async */
+if ('speechSynthesis' in window) {
+  speechSynthesis.getVoices();
+  speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+}
+
+/* ============================================================
+   SETTINGS MODAL
+============================================================ */
+function openSettings() {
+  apiKeyInput.value   = getSetting(STORAGE.apiKey);
+  apiBaseInput.value  = getSetting(STORAGE.apiBase, DEFAULTS.apiBase);
+  modelInput.value    = getSetting(STORAGE.chatModel, DEFAULTS.chatModel);
+  imageModelInput.value = getSetting(STORAGE.imageModel, DEFAULTS.imageModel);
+  settingsModal.classList.add('open');
+}
+function closeSettings() {
+  settingsModal.classList.remove('open');
+}
+function saveSettings() {
+  setSetting(STORAGE.apiKey,    apiKeyInput.value.trim());
+  setSetting(STORAGE.apiBase,   apiBaseInput.value.trim() || DEFAULTS.apiBase);
+  setSetting(STORAGE.chatModel, modelInput.value.trim() || DEFAULTS.chatModel);
+  setSetting(STORAGE.imageModel, imageModelInput.value.trim() || DEFAULTS.imageModel);
+  closeSettings();
+  if (state.messages.length === 0) {
+    renderMessage('assistant', '✅ सेटिंग सेव हो गई! अब आप कुछ भी पूछ सकते हैं।');
+  }
+}
+
+settingsBtn.addEventListener('click', openSettings);
+$('closeSettings').addEventListener('click', closeSettings);
+$('saveSettings').addEventListener('click', saveSettings);
+settingsModal.addEventListener('click', e => {
+  if (e.target === settingsModal) closeSettings();
+});
+
+/* ============================================================
+   CLEAR CHAT
+============================================================ */
+clearBtn.addEventListener('click', clearChat);
+
+/* ============================================================
+   INIT
+============================================================ */
+(function init() {
+  loadHistory();
+
+  if (state.messages.length === 0) {
+    const greeting = hasApiKey()
+      ? 'नमस्ते! 👋 मैं आपका My AI हूँ। पूछिए कुछ भी — सवाल, सलाह, या बातचीत।'
+      : 'नमस्ते! 👋 शुरू करने के लिए ⚙️ सेटिंग खोलें और अपनी API key डालें। फिर बात करें।';
+    renderMessage('assistant', greeting);
+    state.messages.push({ role: 'assistant', content: greeting });
+    saveHistory();
+  }
+
+  chatInput.focus();
+})();
+</script>
+</body>
+</html>
